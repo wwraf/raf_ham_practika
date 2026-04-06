@@ -1,0 +1,164 @@
+{% extends "catalog/base.html" %}
+{% block title %}АвтоМаркет — Главная{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid-bg"></div>
+  <div class="hero-content">
+    <div class="hero-tag">
+      <span style="width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 1.5s infinite;display:inline-block;"></span>
+      Лучший выбор автомобилей в Казахстане
+    </div>
+    <h1 class="hero-title">
+      Найди свой
+      <em>идеальный авто</em>
+    </h1>
+    <p class="hero-sub">Более 500 моделей от мировых производителей. Выгодные цены, рассрочка 0–0–24, доставка по всему Казахстану.</p>
+    <div class="hero-btns">
+      <a href="{% url 'catalog:shop' %}" class="btn-primary">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2.97 1.35A1 1 0 0 1 3.73 1h8.54a1 1 0 0 1 .76.35l2.609 3.044A1.5 1.5 0 0 1 16 5.37v.255a2.375 2.375 0 0 1-4.25 1.458A2.371 2.371 0 0 1 9.875 8 2.37 2.37 0 0 1 8 7.083 2.37 2.37 0 0 1 6.125 8a2.37 2.37 0 0 1-1.875-.917A2.375 2.375 0 0 1 0 5.625V5.37a1.5 1.5 0 0 1 .361-.976zm1.78 4.275a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 1 0 2.75 0V5.37a.5.5 0 0 0-.12-.325L12.27 2H3.73L1.12 5.045A.5.5 0 0 0 1 5.37v.255a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0z"/></svg>
+        Перейти в магазин
+      </a>
+      <a href="{% url 'catalog:category_list' %}" class="btn-outline">Все марки →</a>
+    </div>
+
+    <div class="hero-stats">
+      <div>
+        <div class="hero-stat-num">500+</div>
+        <div class="hero-stat-label">Автомобилей</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">50+</div>
+        <div class="hero-stat-label">Марок</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">12K+</div>
+        <div class="hero-stat-label">Клиентов</div>
+      </div>
+      <div>
+        <div class="hero-stat-num">5★</div>
+        <div class="hero-stat-label">Рейтинг</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BANNER BAR -->
+<div style="background:var(--accent);padding:10px 2rem;display:flex;align-items:center;justify-content:center;gap:2rem;flex-wrap:wrap;overflow:hidden;">
+  <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;">
+    <span>🚀</span> Доставка по Казахстану
+  </div>
+  <div style="width:1px;height:16px;background:rgba(255,255,255,0.3);"></div>
+  <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;">
+    <span>💳</span> Рассрочка 0–0–24 месяца
+  </div>
+  <div style="width:1px;height:16px;background:rgba(255,255,255,0.3);"></div>
+  <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;">
+    <span>🛡️</span> Гарантия 12 месяцев
+  </div>
+  <div style="width:1px;height:16px;background:rgba(255,255,255,0.3);"></div>
+  <div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;">
+    <span>↩️</span> Возврат 14 дней
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <!-- КАТЕГОРИИ -->
+  <div style="margin-bottom:3rem;">
+    <div class="section-header">
+      <h2 class="section-title">Марки <em>авто</em></h2>
+      <a href="{% url 'catalog:category_list' %}" class="section-link">Все марки →</a>
+    </div>
+    <div class="categories-grid">
+      {% for cat in categories %}
+      <a href="{% url 'catalog:product_list' cat.slug %}" class="category-card">
+        <div class="cat-icon">🚗</div>
+        <div class="cat-name">{{ cat.name }}</div>
+        <div class="cat-count">{{ cat.products.count }} авто</div>
+      </a>
+      {% empty %}
+      <p style="color:var(--text3);">Категории пока не добавлены.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- НОВИНКИ -->
+  {% if featured_products %}
+  <div>
+    <div class="section-header">
+      <h2 class="section-title">Свежие <em>поступления</em></h2>
+      <a href="{% url 'catalog:shop' %}" class="section-link">Все автомобили →</a>
+    </div>
+
+    <div class="products-grid">
+      {% for product in featured_products %}
+      {% with product.images.first as img %}
+      <a href="{% url 'catalog:product_detail' product.slug %}" class="product-card">
+        <div class="card-img">
+          {% if img %}
+            <img src="{{ img.image.url }}" alt="{{ img.alt_text|default:product.name }}" loading="lazy"/>
+          {% else %}
+            <div class="card-img-placeholder">🚗</div>
+          {% endif %}
+          <div class="card-badges">
+            {% if product.discount_percent %}<span class="card-badge">-{{ product.discount_percent }}%</span>{% endif %}
+            {% if product.stock == 0 %}<span class="card-badge out">Нет в наличии</span>{% endif %}
+          </div>
+          <button class="card-wish" title="В избранное" onclick="event.preventDefault()">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/></svg>
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="card-category">{{ product.category.name }}</div>
+          <div class="card-name">{{ product.name }}</div>
+          <div class="card-price-row">
+            <span class="card-price">{{ product.price|floatformat:0 }} ₸</span>
+            {% if product.old_price %}
+              <span class="card-old-price">{{ product.old_price|floatformat:0 }} ₸</span>
+            {% endif %}
+          </div>
+        </div>
+        {% if product.stock > 0 %}
+        <button class="card-add-btn" onclick="event.preventDefault(); addToCart(
+          {{ product.id }},
+          '{{ product.name|escapejs }}',
+          {{ product.price }},
+          '{{ product.category.name|escapejs }}',
+          '{% if img %}{{ img.image.url }}{% endif %}'
+        )">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+          В корзину
+        </button>
+        {% endif %}
+      </a>
+      {% endwith %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- CTA BLOCK -->
+  <div style="margin-top:3rem;padding:2.5rem;background:linear-gradient(135deg,rgba(232,83,31,0.12),rgba(232,83,31,0.04));border:1px solid rgba(232,83,31,0.2);border-radius:var(--radius);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.5rem;">
+    <div>
+      <div style="font-family:var(--font-display);font-size:28px;letter-spacing:0.03em;margin-bottom:6px;">Не нашли нужный автомобиль?</div>
+      <div style="font-size:14px;color:var(--text2);">Наши специалисты помогут подобрать идеальный вариант под ваш бюджет</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <a href="tel:+77788865360" class="btn-primary">📞 Позвонить нам</a>
+      <a href="{% url 'catalog:shop' %}" class="btn-outline">Весь каталог</a>
+    </div>
+  </div>
+
+</div>
+
+<style>
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+</style>
+{% endblock %}

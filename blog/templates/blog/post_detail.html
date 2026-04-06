@@ -1,0 +1,273 @@
+{% extends "catalog/base.html" %}
+{% block title %}{{ post.title }} — АвтоМаркет{% endblock %}
+
+{% block content %}
+<div class="page-wrap" style="max-width:900px;">
+
+  <div class="breadcrumb">
+    <a href="{% url 'catalog:home' %}">Главная</a>
+    <span>/</span>
+    <a href="{% url 'blog:post_list' %}">Блог</a>
+    <span>/</span>
+    <span>{{ post.title|truncatechars:40 }}</span>
+  </div>
+
+  <article>
+
+    <!-- ЗАГОЛОВОК И МЕТА -->
+    <div style="margin-bottom:1.5rem;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <span id="status-badge" style="
+          font-size:11px;font-weight:700;
+          padding:4px 12px;border-radius:20px;
+          background:rgba(0,0,0,0.25);
+          color:{{ post.status_color }};
+          border:1px solid {{ post.status_color }}55;
+          transition:all 0.3s;
+        ">{{ post.status_label }}</span>
+
+        <span style="font-size:12px;color:var(--text3);">
+          📅 {{ post.created_at|date:"d F Y" }}
+        </span>
+
+        {% if post.updated_at != post.created_at %}
+        <span style="font-size:12px;color:var(--text3);">
+          · обновлено {{ post.updated_at|date:"d.m.Y" }}
+        </span>
+        {% endif %}
+      </div>
+
+      <h1 style="font-family:var(--font-display);font-size:clamp(32px,5vw,56px);letter-spacing:0.02em;line-height:1.05;margin-bottom:1rem;color:var(--text);">
+        {{ post.title }}
+      </h1>
+
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="
+          width:36px;height:36px;border-radius:50%;flex-shrink:0;
+          background:linear-gradient(135deg,var(--accent),var(--accent2));
+          display:flex;align-items:center;justify-content:center;
+          font-size:15px;font-weight:700;color:#fff;
+        ">{{ post.author.username|first|upper }}</div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--text);">{{ post.author.get_full_name|default:post.author.username }}</div>
+          <div style="font-size:12px;color:var(--text3);">Автор публикации</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ИЗОБРАЖЕНИЕ -->
+    {% if post.image %}
+    <div style="border-radius:var(--radius);overflow:hidden;margin-bottom:2rem;aspect-ratio:16/7;background:var(--bg3);">
+      <img src="{{ post.image.url }}" alt="{{ post.title }}"
+           style="width:100%;height:100%;object-fit:cover;"/>
+    </div>
+    {% endif %}
+
+    <!-- КРАТКОЕ ОПИСАНИЕ -->
+    <div style="
+      padding:1.25rem 1.5rem;
+      background:rgba(232,83,31,0.06);
+      border:1px solid rgba(232,83,31,0.15);
+      border-left:3px solid var(--accent);
+      border-radius:var(--radius-sm);
+      margin-bottom:2rem;
+      font-size:15px;
+      color:var(--text2);
+      line-height:1.7;
+      font-style:italic;
+    ">{{ post.short_description }}</div>
+
+    <!-- ПОЛНЫЙ ТЕКСТ -->
+    <div style="
+      font-size:15px;
+      line-height:1.85;
+      color:var(--text2);
+      margin-bottom:2.5rem;
+    ">
+      {{ post.content|linebreaks }}
+    </div>
+
+    <!-- ПАНЕЛЬ ДЕЙСТВИЙ -->
+    <div style="
+      display:flex;align-items:center;justify-content:space-between;
+      padding:1.25rem 1.5rem;
+      background:var(--bg2);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      flex-wrap:wrap;
+      gap:12px;
+    ">
+      <!-- ЛАЙК (fetch) -->
+      <div style="display:flex;align-items:center;gap:12px;">
+        {% if request.user.is_authenticated %}
+        <button id="like-btn"
+          onclick="toggleLike()"
+          style="
+            display:flex;align-items:center;gap:8px;
+            padding:10px 20px;
+            background:{% if user_liked %}rgba(239,68,68,0.15){% else %}var(--bg3){% endif %};
+            border:1px solid {% if user_liked %}rgba(239,68,68,0.4){% else %}var(--border){% endif %};
+            border-radius:var(--radius-sm);
+            color:{% if user_liked %}var(--red){% else %}var(--text2){% endif %};
+            font-family:var(--font-body);font-size:14px;font-weight:700;
+            cursor:pointer;transition:all 0.2s;
+          ">
+          <span id="like-icon">{% if user_liked %}❤️{% else %}🤍{% endif %}</span>
+          <span id="like-count">{{ post.likes_count }}</span>
+          <span style="font-size:12px;opacity:0.7;">{% if user_liked %}Нравится{% else %}Лайк{% endif %}</span>
+        </button>
+        {% else %}
+        <div style="display:flex;align-items:center;gap:6px;font-size:14px;color:var(--text3);">
+          ❤️ <span>{{ post.likes_count }}</span> лайков
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- УПРАВЛЕНИЕ -->
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+
+        {% if perms.blog.change_post %}
+        <div>
+          <select id="status-select"
+            onchange="changeStatus(this.value)"
+            style="
+              padding:9px 12px;
+              background:var(--bg3);
+              border:1px solid var(--border);
+              border-radius:var(--radius-sm);
+              color:var(--text2);
+              font-family:var(--font-body);
+              font-size:13px;
+              cursor:pointer;
+              outline:none;
+            ">
+            {% for value, label in post.STATUS_CHOICES %}
+            <option value="{{ value }}" {% if post.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <a href="{% url 'blog:post_edit' post.slug %}" style="
+          display:flex;align-items:center;gap:6px;
+          padding:9px 16px;
+          background:var(--bg3);
+          border:1px solid var(--border);
+          border-radius:var(--radius-sm);
+          color:var(--text2);
+          font-size:13px;font-weight:700;
+          text-decoration:none;
+          transition:all 0.15s;
+        "
+        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+        onmouseout="this.style.borderColor='';this.style.color='var(--text2)'">
+          ✏️ Редактировать
+        </a>
+        {% endif %}
+
+        {% if perms.blog.delete_post %}
+        <a href="{% url 'blog:post_delete' post.slug %}" style="
+          display:flex;align-items:center;gap:6px;
+          padding:9px 16px;
+          background:rgba(239,68,68,0.08);
+          border:1px solid rgba(239,68,68,0.2);
+          border-radius:var(--radius-sm);
+          color:var(--red);
+          font-size:13px;font-weight:700;
+          text-decoration:none;
+          transition:all 0.15s;
+        "
+        onmouseover="this.style.background='rgba(239,68,68,0.18)'"
+        onmouseout="this.style.background='rgba(239,68,68,0.08)'">
+          🗑️ Удалить
+        </a>
+        {% endif %}
+
+        <a href="{% url 'blog:post_list' %}" style="
+          display:flex;align-items:center;gap:6px;
+          padding:9px 14px;
+          background:transparent;
+          border:1px solid var(--border);
+          border-radius:var(--radius-sm);
+          color:var(--text3);
+          font-size:13px;
+          text-decoration:none;
+          transition:all 0.15s;
+        "
+        onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--border2)'"
+        onmouseout="this.style.color='var(--text3)';this.style.borderColor=''">
+          ← К списку
+        </a>
+      </div>
+    </div>
+
+  </article>
+</div>
+
+{% block extra_js %}
+<script>
+  const LIKE_URL   = "{% url 'blog:post_like' post.slug %}";
+  const STATUS_URL = "{% url 'blog:post_change_status' post.slug %}";
+  const CSRF_TOKEN = "{{ csrf_token }}";
+
+  /* ── ЛАЙК (fetch) ───────────────────────── */
+  async function toggleLike() {
+    const btn = document.getElementById('like-btn');
+    btn.disabled = true;
+    try {
+      const res = await fetch(LIKE_URL, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+
+      document.getElementById('like-count').textContent = data.count;
+      const icon = document.getElementById('like-icon');
+      if (data.liked) {
+        icon.textContent = '❤️';
+        btn.style.background = 'rgba(239,68,68,0.15)';
+        btn.style.borderColor = 'rgba(239,68,68,0.4)';
+        btn.style.color = 'var(--red)';
+        btn.querySelector('span:last-child').textContent = 'Нравится';
+      } else {
+        icon.textContent = '🤍';
+        btn.style.background = 'var(--bg3)';
+        btn.style.borderColor = 'var(--border)';
+        btn.style.color = 'var(--text2)';
+        btn.querySelector('span:last-child').textContent = 'Лайк';
+      }
+      btn.style.transform = 'scale(1.08)';
+      setTimeout(() => btn.style.transform = '', 200);
+    } catch(e) {
+      showToast('Не удалось поставить лайк', 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  /* ── СМЕНА СТАТУСА (fetch) ──────────────── */
+  async function changeStatus(newStatus) {
+    try {
+      const res = await fetch(STATUS_URL, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+
+      const badge = document.getElementById('status-badge');
+      badge.textContent = data.status_label;
+      badge.style.color = data.status_color;
+      badge.style.borderColor = data.status_color + '55';
+      badge.style.transform = 'scale(1.1)';
+      setTimeout(() => badge.style.transform = '', 250);
+
+      showToast('Статус изменён: ' + data.status_label);
+    } catch(e) {
+      showToast('Не удалось изменить статус', 'error');
+    }
+  }
+</script>
+{% endblock %}
+{% endblock %}

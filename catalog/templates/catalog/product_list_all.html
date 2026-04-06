@@ -1,0 +1,154 @@
+{% extends "catalog/base.html" %}
+{% block title %}Магазин — АвтоМаркет{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+
+  <div class="breadcrumb">
+    <a href="{% url 'catalog:home' %}">Главная</a>
+    <span>/</span>
+    <span>Магазин</span>
+  </div>
+
+  <div class="section-header">
+    <h1 class="section-title">Все <em>автомобили</em></h1>
+  </div>
+
+  <!-- TOOLBAR -->
+  <form id="filter-form" method="GET">
+    <div class="toolbar">
+      <div class="toolbar-search">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.656a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/></svg>
+        <input type="text" name="q" value="{{ q }}" placeholder="Поиск по названию или описанию..." />
+      </div>
+
+      <div class="toolbar-right">
+        <button type="button" class="filter-toggle-btn" id="filter-btn" onclick="toggleFilter('filter-btn','filter-panel')">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/></svg>
+          Фильтры
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z"/></svg>
+        </button>
+        <select name="sort" class="sort-select" onchange="this.form.submit()">
+          <option value="name" {% if sort == 'name' %}selected{% endif %}>По названию</option>
+          <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Цена ↑</option>
+          <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Цена ↓</option>
+          <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Новинки</option>
+        </select>
+        <button type="submit" style="padding:8px 16px;background:var(--accent);border:none;border-radius:var(--radius-sm);color:#fff;font-family:var(--font-body);font-size:13px;font-weight:700;cursor:pointer;">Найти</button>
+      </div>
+    </div>
+
+    <!-- ФИЛЬТР ПАНЕЛЬ -->
+    <div class="filter-panel-wrap" id="filter-panel">
+      <div class="filter-panel">
+        <div class="filter-group">
+          <label>Категория (марка)</label>
+          <select name="category">
+            <option value="">Все марки</option>
+            {% for cat in categories %}
+            <option value="{{ cat.slug }}" {% if cat_filter == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Цена от (₸)</label>
+          <input type="number" name="price_min" value="{{ price_min }}" placeholder="0" min="0"/>
+        </div>
+        <div class="filter-group">
+          <label>Цена до (₸)</label>
+          <input type="number" name="price_max" value="{{ price_max }}" placeholder="9 999 999" min="0"/>
+        </div>
+        <div class="filter-group" style="justify-content:flex-end;">
+          <label class="filter-check">
+            <input type="checkbox" name="in_stock" value="1" {% if in_stock %}checked{% endif %}/>
+            Только в наличии
+          </label>
+          <label class="filter-check">
+            <input type="checkbox" name="only_discount" value="1" {% if only_discount %}checked{% endif %}/>
+            Со скидкой
+          </label>
+        </div>
+        <div class="filter-actions-row">
+          <button type="submit" class="btn-apply">Применить</button>
+          <button type="button" class="btn-reset" onclick="resetForm('filter-form')">Сбросить</button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <div class="results-info">
+    {% if q %}Результаты по запросу «<b>{{ q }}</b>»: {% endif %}
+    Найдено <b>{{ page_obj.paginator.count }}</b> авто
+    {% if cat_filter %} в категории <b>{{ cat_filter }}</b>{% endif %}
+  </div>
+
+  {% if products %}
+  <div class="products-grid">
+    {% for product in products %}
+    {% with product.images.first as img %}
+    <a href="{% url 'catalog:product_detail' product.slug %}" class="product-card">
+      <div class="card-img">
+        {% if img %}
+          <img src="{{ img.image.url }}" alt="{{ img.alt_text|default:product.name }}" loading="lazy"/>
+        {% else %}
+          <div class="card-img-placeholder">🚗</div>
+        {% endif %}
+        <div class="card-badges">
+          {% if product.discount_percent %}<span class="card-badge">-{{ product.discount_percent }}%</span>{% endif %}
+          {% if product.stock == 0 %}<span class="card-badge out">Нет в наличии</span>{% endif %}
+        </div>
+        <button class="card-wish" title="В избранное" onclick="event.preventDefault()">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/></svg>
+        </button>
+      </div>
+      <div class="card-body">
+        <div class="card-category">{{ product.category.name }}</div>
+        <div class="card-name">{{ product.name }}</div>
+        <div class="card-price-row">
+          <span class="card-price">{{ product.price|floatformat:0 }} ₸</span>
+          {% if product.old_price %}
+            <span class="card-old-price">{{ product.old_price|floatformat:0 }} ₸</span>
+          {% endif %}
+        </div>
+      </div>
+      {% if product.stock > 0 %}
+      <button class="card-add-btn" onclick="event.preventDefault(); addToCart(
+        {{ product.id }},
+        '{{ product.name|escapejs }}',
+        {{ product.price }},
+        '{{ product.category.name|escapejs }}',
+        '{% if img %}{{ img.image.url }}{% endif %}'
+      )">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+        В корзину
+      </button>
+      {% endif %}
+    </a>
+    {% endwith %}
+    {% endfor %}
+  </div>
+
+  {% if page_obj.has_other_pages %}
+  <div class="pagination">
+    {% if page_obj.has_previous %}
+      <a class="page-btn" href="?page={{ page_obj.previous_page_number }}&q={{ q }}&sort={{ sort }}&price_min={{ price_min }}&price_max={{ price_max }}&in_stock={{ in_stock }}&only_discount={{ only_discount }}&category={{ cat_filter }}">← Назад</a>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+      <a class="page-btn {% if page_obj.number == num %}current{% endif %}" href="?page={{ num }}&q={{ q }}&sort={{ sort }}&price_min={{ price_min }}&price_max={{ price_max }}&in_stock={{ in_stock }}&only_discount={{ only_discount }}&category={{ cat_filter }}">{{ num }}</a>
+    {% endfor %}
+    {% if page_obj.has_next %}
+      <a class="page-btn" href="?page={{ page_obj.next_page_number }}&q={{ q }}&sort={{ sort }}&price_min={{ price_min }}&price_max={{ price_max }}&in_stock={{ in_stock }}&only_discount={{ only_discount }}&category={{ cat_filter }}">Вперёд →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">🔍</div>
+    <h3>Ничего не найдено</h3>
+    <p>Попробуйте изменить фильтры или поисковый запрос.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

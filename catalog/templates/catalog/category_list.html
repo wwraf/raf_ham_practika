@@ -1,0 +1,36 @@
+
+{% extends "catalog/base.html" %}
+{% block title %}Каталог категорий — АвтоМаркет{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+
+  <div class="breadcrumb">
+    <a href="{% url 'catalog:home' %}">Главная</a>
+    <span>/</span>
+    <span>Каталог</span>
+  </div>
+
+  <div class="section-header">
+    <h1 class="section-title">Все <em>марки</em></h1>
+    <p style="color:var(--text3);font-size:13px;">{{ categories.count }} категори{{ categories.count|pluralize:"я,и,й" }}</p>
+  </div>
+
+  <div class="categories-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));">
+    {% for cat in categories %}
+    <a href="{% url 'catalog:product_list' cat.slug %}" class="category-card">
+      <div class="cat-icon">🚗</div>
+      <div class="cat-name">{{ cat.name }}</div>
+      <div class="cat-count">{{ cat.products.count }} авто</div>
+    </a>
+    {% empty %}
+    <div class="empty-state">
+      <div class="empty-state-icon">📭</div>
+      <h3>Категории не найдены</h3>
+      <p>Добавьте категории через панель администратора.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

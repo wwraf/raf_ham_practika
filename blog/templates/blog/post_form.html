@@ -1,0 +1,205 @@
+{% extends "catalog/base.html" %}
+{% block title %}{% if is_create %}Новая публикация{% else %}Редактировать: {{ post.title }}{% endif %} — АвтоМаркет{% endblock %}
+
+{% block content %}
+<div class="page-wrap" style="max-width:800px;">
+
+  <div class="breadcrumb">
+    <a href="{% url 'catalog:home' %}">Главная</a>
+    <span>/</span>
+    <a href="{% url 'blog:post_list' %}">Блог</a>
+    <span>/</span>
+    {% if not is_create %}<a href="{% url 'blog:post_detail' post.slug %}">{{ post.title|truncatechars:30 }}</a><span>/</span>{% endif %}
+    <span>{% if is_create %}Создание{% else %}Редактирование{% endif %}</span>
+  </div>
+
+  {# ПРОВЕРКА ПРАВ: add_post для создания ИЛИ change_post для редактирования #}
+  {% if is_create and perms.blog.add_post or not is_create and perms.blog.change_post %}
+    
+    <div style="
+      background:var(--bg2);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:2rem;
+    ">
+      <div style="margin-bottom:1.75rem;">
+        <h1 style="font-family:var(--font-display);font-size:32px;letter-spacing:0.03em;margin-bottom:4px;">
+          {% if is_create %}Новая <em style="color:var(--accent);font-style:normal;">публикация</em>{% else %}Редактировать <em style="color:var(--accent);font-style:normal;">публикацию</em>{% endif %}
+        </h1>
+        <p style="font-size:13px;color:var(--text3);">
+          {% if is_create %}Заполните все поля и выберите статус перед публикацией.{% else %}Внесите изменения и сохраните.{% endif %}
+        </p>
+      </div>
+
+      <form method="POST" enctype="multipart/form-data" id="post-form">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div style="padding:12px 16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius-sm);margin-bottom:1rem;font-size:13px;color:var(--red);">
+          {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <div class="form-field" style="margin-bottom:1.25rem;">
+          <label class="form-label" style="display:block;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;">
+            Заголовок *
+          </label>
+          {{ form.title }}
+          {% if form.title.errors %}
+          <div style="font-size:12px;color:var(--red);margin-top:4px;">{{ form.title.errors.as_text }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-field" style="margin-bottom:1.25rem;">
+          <label class="form-label" style="display:block;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;">
+            Краткое описание *
+          </label>
+          {{ form.short_description }}
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">Показывается в списке публикаций. До 500 символов.</div>
+          {% if form.short_description.errors %}
+          <div style="font-size:12px;color:var(--red);margin-top:4px;">{{ form.short_description.errors.as_text }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-field" style="margin-bottom:1.25rem;">
+          <label class="form-label" style="display:block;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;">
+            Полный текст *
+          </label>
+          {{ form.content }}
+          {% if form.content.errors %}
+          <div style="font-size:12px;color:var(--red);margin-top:4px;">{{ form.content.errors.as_text }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-field" style="margin-bottom:1.25rem;">
+          <label class="form-label" style="display:block;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;">
+            Изображение
+          </label>
+
+          {% if post.image %}
+          <div style="margin-bottom:10px;border-radius:var(--radius-sm);overflow:hidden;max-width:300px;aspect-ratio:16/9;background:var(--bg3);">
+            <img src="{{ post.image.url }}" alt="Текущее изображение" style="width:100%;height:100%;object-fit:cover;"/>
+          </div>
+          <div style="font-size:12px;color:var(--text3);margin-bottom:8px;">Текущее изображение. Загрузите новое, чтобы заменить.</div>
+          {% endif %}
+
+          <label id="file-label" style="
+            display:flex;align-items:center;gap:10px;
+            padding:12px 16px;
+            background:var(--bg3);
+            border:2px dashed var(--border);
+            border-radius:var(--radius-sm);
+            cursor:pointer;
+            transition:border-color 0.15s;
+            font-size:13px;color:var(--text2);
+          "
+          onmouseover="this.style.borderColor='var(--accent)'"
+          onmouseout="this.style.borderColor='var(--border)'">
+            <span style="font-size:20px;">🖼️</span>
+            <span id="file-name">Выберите файл или перетащите сюда</span>
+            {{ form.image }}
+          </label>
+
+          {% if form.image.errors %}
+          <div style="font-size:12px;color:var(--red);margin-top:4px;">{{ form.image.errors.as_text }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-field" style="margin-bottom:1.75rem;">
+          <label class="form-label" style="display:block;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px;">
+            Статус публикации
+          </label>
+          {{ form.status }}
+          <div style="font-size:11px;color:var(--text3);margin-top:4px;">Черновик — виден только автору. Опубликовано — виден всем.</div>
+          {% if form.status.errors %}
+          <div style="font-size:12px;color:var(--red);margin-top:4px;">{{ form.status.errors.as_text }}</div>
+          {% endif %}
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button type="submit" class="btn-primary">
+            {% if is_create %}
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+            Опубликовать
+            {% else %}
+            💾 Сохранить изменения
+            {% endif %}
+          </button>
+          {% if not is_create %}
+          <a href="{% url 'blog:post_detail' post.slug %}" class="btn-outline">Отмена</a>
+          {% else %}
+          <a href="{% url 'blog:post_list' %}" class="btn-outline">Отмена</a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+
+  {% else %}
+    {# СООБЩЕНИЕ ОБ ОШИБКЕ ДОСТУПА #}
+    <div style="text-align:center; padding:3rem; background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius);">
+        <div style="font-size:48px; margin-bottom:1rem;">🚫</div>
+        <h2 style="color:var(--text);">У вас недостаточно прав</h2>
+        <p style="color:var(--text3); margin-bottom:1.5rem;">Вы не можете {% if is_create %}создавать{% else %}редактировать{% endif %} публикации в этом разделе.</p>
+        <a href="{% url 'blog:post_list' %}" class="btn-outline" style="text-decoration:none; display:inline-block;">Вернуться в блог</a>
+    </div>
+  {% endif %}
+
+</div>
+
+<style>
+.form-input {
+  width: 100%;
+  padding: 11px 14px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.form-input:focus { border-color: var(--accent); background: var(--bg4); }
+.form-input::placeholder { color: var(--text3); }
+#id_image { display: none; }
+.form-input-file { display: none; }
+</style>
+
+{% block extra_js %}
+<script>
+// Скрипт оставляем без изменений, он сработает только если форма есть в DOM
+const imageInput = document.getElementById('id_image');
+if (imageInput) {
+    imageInput.addEventListener('change', function() {
+      const name = this.files[0] ? this.files[0].name : 'Выберите файл или перетащите сюда';
+      document.getElementById('file-name').textContent = name;
+    });
+
+    const label = document.getElementById('file-label');
+    label.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      label.style.borderColor = 'var(--accent)';
+      label.style.background = 'rgba(232,83,31,0.06)';
+    });
+    label.addEventListener('dragleave', () => {
+      label.style.borderColor = '';
+      label.style.background = '';
+    });
+    label.addEventListener('drop', (e) => {
+      e.preventDefault();
+      label.style.borderColor = '';
+      label.style.background = '';
+      const file = e.dataTransfer.files[0];
+      if (file) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        imageInput.files = dt.files;
+        document.getElementById('file-name').textContent = file.name;
+      }
+    });
+}
+</script>
+{% endblock %}
+{% endblock %}

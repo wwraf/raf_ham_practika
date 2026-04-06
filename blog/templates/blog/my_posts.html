@@ -1,0 +1,153 @@
+{% extends "catalog/base.html" %}
+{% block title %}Мои публикации — АвтоМаркет{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+
+  <div class="breadcrumb">
+    <a href="{% url 'catalog:home' %}">Главная</a>
+    <span>/</span>
+    <a href="{% url 'blog:post_list' %}">Блог</a>
+    <span>/</span>
+    <span>Мои публикации</span>
+  </div>
+
+  <div class="section-header">
+    <h1 class="section-title">Мои <em>публикации</em></h1>
+    {% if perms.blog.add_post %}
+    <a href="{% url 'blog:post_create' %}" class="btn-primary" style="font-size:13px;padding:9px 18px;">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+      Новая публикация
+    </a>
+    {% endif %}
+  </div>
+
+  {% if posts %}
+  <div style="
+    background:var(--bg2);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:hidden;
+  ">
+    <!-- Заголовок таблицы -->
+    <div style="
+      display:grid;
+      grid-template-columns:1fr 130px 90px 90px 120px;
+      gap:1rem;
+      padding:12px 20px;
+      background:var(--bg3);
+      border-bottom:1px solid var(--border);
+      font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);
+    ">
+      <div>Публикация</div>
+      <div>Дата</div>
+      <div style="text-align:center;">Лайки</div>
+      <div style="text-align:center;">Статус</div>
+      <div style="text-align:right;">Действия</div>
+    </div>
+
+    {% for post in posts %}
+    <div style="
+      display:grid;
+      grid-template-columns:1fr 130px 90px 90px 120px;
+      gap:1rem;
+      padding:14px 20px;
+      border-bottom:1px solid var(--border);
+      align-items:center;
+      transition:background 0.15s;
+    "
+    onmouseover="this.style.background='var(--bg3)'"
+    onmouseout="this.style.background=''">
+
+      <!-- Название -->
+      <div>
+        <a href="{% url 'blog:post_detail' post.slug %}" style="
+          font-size:14px;font-weight:700;color:var(--text);
+          text-decoration:none;transition:color 0.15s;
+        "
+        onmouseover="this.style.color='var(--accent)'"
+        onmouseout="this.style.color='var(--text)'">
+          {% if post.image %}
+          <span style="display:inline-flex;align-items:center;gap:8px;">
+            <span style="width:36px;height:28px;border-radius:4px;overflow:hidden;display:inline-flex;flex-shrink:0;">
+              <img src="{{ post.image.url }}" style="width:100%;height:100%;object-fit:cover;" alt=""/>
+            </span>
+            {{ post.title|truncatechars:50 }}
+          </span>
+          {% else %}
+          {{ post.title|truncatechars:55 }}
+          {% endif %}
+        </a>
+      </div>
+
+      <!-- Дата -->
+      <div style="font-size:12px;color:var(--text3);">{{ post.created_at|date:"d.m.Y H:i" }}</div>
+
+      <!-- Лайки -->
+      <div style="text-align:center;font-size:13px;color:var(--text2);">❤️ {{ post.likes_count }}</div>
+
+      <!-- Статус -->
+      <div style="text-align:center;">
+        <span style="
+          font-size:10px;font-weight:700;
+          padding:3px 10px;border-radius:20px;
+          color:{{ post.status_color }};
+          background:{{ post.status_color }}18;
+          border:1px solid {{ post.status_color }}44;
+          white-space:nowrap;
+        ">{{ post.status_label }}</span>
+      </div>
+
+      <!-- Действия -->
+      <div style="display:flex;gap:6px;justify-content:flex-end;">
+        {% if perms.blog.change_post %}
+        <a href="{% url 'blog:post_edit' post.slug %}" style="
+          padding:6px 12px;
+          background:var(--bg4);
+          border:1px solid var(--border);
+          border-radius:var(--radius-sm);
+          color:var(--text2);
+          font-size:11px;font-weight:700;
+          text-decoration:none;
+          transition:all 0.12s;
+          white-space:nowrap;
+        "
+        onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
+          ✏️ Изм.
+        </a>
+        {% endif %}
+        {% if perms.blog.delete_post %}
+        <a href="{% url 'blog:post_delete' post.slug %}" style="
+          padding:6px 12px;
+          background:rgba(239,68,68,0.06);
+          border:1px solid rgba(239,68,68,0.15);
+          border-radius:var(--radius-sm);
+          color:var(--red);
+          font-size:11px;font-weight:700;
+          text-decoration:none;
+          transition:all 0.12s;
+        "
+        onmouseover="this.style.background='rgba(239,68,68,0.15)'"
+        onmouseout="this.style.background='rgba(239,68,68,0.06)'">
+          🗑️
+        </a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon">📝</div>
+    <h3>У вас нет публикаций</h3>
+    <p>Создайте первую публикацию прямо сейчас!</p>
+    {% if perms.blog.add_post %}
+    <a href="{% url 'blog:post_create' %}" class="btn-primary" style="margin-top:1rem;display:inline-flex;">Создать публикацию</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

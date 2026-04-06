@@ -1,0 +1,214 @@
+{% extends "catalog/base.html" %}
+{% block title %}{{ product.name }} — АвтоМаркет{% endblock %}
+
+{% block content %}
+<div class="page-wrap">
+
+  <div class="breadcrumb">
+    <a href="{% url 'catalog:home' %}">Главная</a>
+    <span>/</span>
+    <a href="{% url 'catalog:category_list' %}">Каталог</a>
+    <span>/</span>
+    <a href="{% url 'catalog:product_list' product.category.slug %}">{{ product.category.name }}</a>
+    <span>/</span>
+    <span>{{ product.name }}</span>
+  </div>
+
+  <div class="detail-grid">
+
+    <!-- ГАЛЕРЕЯ -->
+    <div class="detail-images">
+      <div class="detail-main-img">
+        {% with product.images.first as main %}
+          {% if main %}
+            <img id="main-img" src="{{ main.image.url }}" alt="{{ main.alt_text|default:product.name }}"/>
+          {% else %}
+            <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:80px;color:var(--text3);">🚗</div>
+          {% endif %}
+        {% endwith %}
+      </div>
+
+      {% if product.images.count > 1 %}
+      <div class="detail-thumbs">
+        {% for img in product.images.all %}
+        <div class="detail-thumb {% if forloop.first %}active{% endif %}" onclick="setMainImg('{{ img.image.url }}', this)">
+          <img src="{{ img.image.url }}" alt="{{ img.alt_text|default:product.name }}" loading="lazy"/>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ИНФОРМАЦИЯ -->
+    <div class="detail-info">
+      <div class="detail-category">{{ product.category.name }}</div>
+      <h1 class="detail-name">{{ product.name }}</h1>
+
+      <div class="detail-price-row">
+        <span class="detail-price">{{ product.price|floatformat:0 }} ₸</span>
+        {% if product.old_price %}
+          <span class="detail-old-price">{{ product.old_price|floatformat:0 }} ₸</span>
+          {% if product.discount_percent %}
+            <span class="detail-discount-badge">Скидка {{ product.discount_percent }}%</span>
+          {% endif %}
+        {% endif %}
+      </div>
+
+      {% if product.description %}
+      <p class="detail-desc">{{ product.description }}</p>
+      {% endif %}
+
+      <!-- Характеристики -->
+      <div class="detail-specs">
+        <div class="spec-row">
+          <span class="spec-label">Категория / Марка</span>
+          <span class="spec-value">{{ product.category.name }}</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">Наличие</span>
+          <span class="spec-value" style="color:{% if product.stock > 0 %}var(--green){% else %}var(--red){% endif %}">
+            {% if product.stock > 0 %}{{ product.stock }} шт. в наличии{% else %}Нет в наличии{% endif %}
+          </span>
+        </div>
+        {% if product.old_price and product.discount_percent %}
+        <div class="spec-row">
+          <span class="spec-label">Скидка</span>
+          <span class="spec-value" style="color:var(--green)">{{ product.discount_percent }}%</span>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="detail-stock">
+        {% if product.stock > 0 %}
+          <div class="stock-dot"></div>
+          <span style="color:var(--text2);">В наличии: <b style="color:var(--green);">{{ product.stock }} шт.</b></span>
+        {% else %}
+          <div class="stock-dot out"></div>
+          <span style="color:var(--text3);">Нет в наличии</span>
+        {% endif %}
+      </div>
+
+      <div class="detail-actions">
+        {% if product.stock > 0 %}
+          {% with product.images.first as img %}
+          <button class="btn-buy" onclick="addToCart(
+            {{ product.id }},
+            '{{ product.name|escapejs }}',
+            {{ product.price }},
+            '{{ product.category.name|escapejs }}',
+            '{% if img %}{{ img.image.url }}{% endif %}'
+          )">
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zm3.102 3l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+            </svg>
+            Добавить в корзину
+          </button>
+          {% endwith %}
+
+          <button class="btn-wish-lg" title="В избранное">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/></svg>
+          </button>
+        {% else %}
+          <button class="btn-buy" disabled>Нет в наличии</button>
+        {% endif %}
+
+        <a href="{% url 'catalog:product_list' product.category.slug %}" class="btn-outline">← Назад</a>
+      </div>
+
+      <!-- Гарантии -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:0.5rem;">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);">
+          <span style="font-size:18px;">🛡️</span>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text);">Гарантия</div>
+            <div style="font-size:11px;color:var(--text3);">12 месяцев</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);">
+          <span style="font-size:18px;">🚚</span>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text);">Доставка</div>
+            <div style="font-size:11px;color:var(--text3);">По всему Казахстану</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);">
+          <span style="font-size:18px;">💳</span>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text);">Рассрочка</div>
+            <div style="font-size:11px;color:var(--text3);">0–0–24</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);">
+          <span style="font-size:18px;">↩️</span>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--text);">Возврат</div>
+            <div style="font-size:11px;color:var(--text3);">14 дней</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ПОХОЖИЕ ТОВАРЫ -->
+  {% if related %}
+  <div style="margin-top:3rem;">
+    <div class="section-header">
+      <h2 class="section-title">Похожие <em>авто</em></h2>
+    </div>
+    <div class="products-grid">
+      {% for item in related %}
+      {% with item.images.first as img %}
+      <a href="{% url 'catalog:product_detail' item.slug %}" class="product-card">
+        <div class="card-img">
+          {% if img %}
+            <img src="{{ img.image.url }}" alt="{{ img.alt_text|default:item.name }}" loading="lazy"/>
+          {% else %}
+            <div class="card-img-placeholder">🚗</div>
+          {% endif %}
+          <div class="card-badges">
+            {% if item.discount_percent %}<span class="card-badge">-{{ item.discount_percent }}%</span>{% endif %}
+            {% if item.stock == 0 %}<span class="card-badge out">Нет</span>{% endif %}
+          </div>
+          <button class="card-wish" title="В избранное" onclick="event.preventDefault()">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.314C12.438-3.248 23.534 4.735 8 15-7.534 4.736 3.562-3.248 8 1.314z"/></svg>
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="card-category">{{ item.category.name }}</div>
+          <div class="card-name">{{ item.name }}</div>
+          <div class="card-price-row">
+            <span class="card-price">{{ item.price|floatformat:0 }} ₸</span>
+            {% if item.old_price %}<span class="card-old-price">{{ item.old_price|floatformat:0 }} ₸</span>{% endif %}
+          </div>
+        </div>
+        {% if item.stock > 0 %}
+        <button class="card-add-btn" onclick="event.preventDefault(); addToCart(
+          {{ item.id }},
+          '{{ item.name|escapejs }}',
+          {{ item.price }},
+          '{{ item.category.name|escapejs }}',
+          '{% if img %}{{ img.image.url }}{% endif %}'
+        )">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/></svg>
+          В корзину
+        </button>
+        {% endif %}
+      </a>
+      {% endwith %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+{% block extra_js %}
+<script>
+function setMainImg(url, thumb) {
+  document.getElementById('main-img').src = url;
+  document.querySelectorAll('.detail-thumb').forEach(t => t.classList.remove('active'));
+  thumb.classList.add('active');
+}
+</script>
+{% endblock %}
+{% endblock %}
