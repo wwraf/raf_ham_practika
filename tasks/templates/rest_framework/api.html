@@ -1,0 +1,19 @@
+{% extends "rest_framework/base.html" %}
+
+{% block title %}API{% endblock %}
+
+{% block content %}
+<h2>Django API</h2>
+
+<p style="opacity:0.8">
+    This endpoint works via JSON requests.
+</p>
+
+<ul>
+    <li>/auth/register/</li>
+    <li>/auth/login/</li>
+    <li>/tasks/</li>
+</ul>
+
+<p class="small">Use Postman or frontend app 🚀</p>
+{% endblock %}
